@@ -1,0 +1,7 @@
+import { build } from 'esbuild';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+await build({ entryPoints: ['src/app.js'], bundle: true, format: 'iife', platform: 'browser', target: 'es2022', outfile: 'site/app.js', minify: true,
+  alias: { crypto: require.resolve('crypto-browserify'), stream: require.resolve('stream-browserify'), events: require.resolve('events/'), vm: require.resolve('vm-browserify') },
+  define: { global: 'globalThis', 'process.env.NODE_ENV': '"production"' }, inject: ['src/shim.js'], logLevel: 'warning' });
+console.log('built site/app.js');

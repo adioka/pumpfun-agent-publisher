@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://solana-rpc.publicnode.com https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://uploader.irys.xyz https://devnet.irys.xyz https://gateway.irys.xyz; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:,"><title>pumpfun agent publisher</title>
+<style>body{font:14px system-ui,sans-serif;max-width:860px;margin:24px auto;padding:0 14px;background:#0e1117;color:#e6e9ef}
+button{font-size:15px;padding:10px 16px;margin:6px 0;border-radius:8px;border:0;background:#7ee2b8;color:#0b2a1c;font-weight:700}
+button:disabled{background:#2b3442;color:#7b8798}pre{white-space:pre-wrap;word-break:break-all;background:#151b25;padding:10px;border-radius:8px;font-size:12px}
+.err{color:#ff8a8a}.ok{color:#8ef0b8}h2{font-size:16px;margin-top:22px}</style></head><body>
+<h1>pumpfun: publish the Metaplex agent</h1>
+<p>Network <b id="net"></b>, locked to owner <code id="owner"></code>. Everything is signed by <b>your</b> wallet in <b>this</b> browser; this static page has no server and holds no keys. Keep this tab open until step 5 confirms.</p>
+<h2>1. Connect wallet</h2><button data-step="1" id="b1">Connect Phantom / Backpack</button> <span id="who"></span>
+<pre id="keys"></pre>
+<h2>2. Fund Irys (1 wallet transaction)</h2><pre id="quote"></pre><button data-step="2" id="b2">Fund Irys</button>
+<h2>3. Upload image + 3 JSON files (4 message signatures, no SOL moves)</h2><button data-step="3" id="b3">Upload to Irys</button><pre id="uris"></pre>
+<h2>4. Build + simulate the agent transaction</h2><button data-step="4" id="b4">Rebuild / re-simulate</button><pre id="sim"></pre>
+<h2>5. Sign and send (1 wallet transaction)</h2><button data-step="5" id="b5">Sign &amp; send agent transaction</button><pre id="result"></pre>
+<h2>Documents</h2><pre id="docs"></pre><h2>Log</h2><div id="log"></div>
+<script src="app.js"></script></body></html>

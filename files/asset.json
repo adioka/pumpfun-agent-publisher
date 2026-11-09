@@ -1,0 +1,12 @@
+{
+  "name": "pumpfun",
+  "description": "pumpfun: Aaron's Pump.fun research and trading agent on Grok Bot. Approval mode: every trade, payment, claim or launch is built unsigned, simulated, and only goes out after the owner reviews and signs it.",
+  "image": "REPLACE_WITH_HOSTED_IMAGE_URL",
+  "external_url": "https://pump.fun/profile/RitzySolSilence",
+  "attributes": [
+    { "trait_type": "type", "value": "agent" },
+    { "trait_type": "mode", "value": "approval" },
+    { "trait_type": "chain", "value": "solana" }
+  ],
+  "properties": { "category": "image" }
+}
