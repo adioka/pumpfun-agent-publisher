@@ -1,5 +1,5 @@
 # pumpfun-agent-publisher
-Static page that lets the owner (`2LVmCxmyYtVL9qcZXEnusF7xRtaYKYPWCmkZKHGF9K71`, hard-locked) publish the pumpfun Metaplex agent:
+Static page that lets the owner (`BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN`, hard-locked) publish the pumpfun Metaplex agent:
 fund Irys (1 tx), upload image + 3 JSON (4 message signatures), then sign one combined Metaplex tx
 (createCollection + create asset + registerIdentityV1). Collection/asset keypairs are generated in the
 browser, kept in tab memory only, and wiped after confirmation. Every transaction is simulated before signing.

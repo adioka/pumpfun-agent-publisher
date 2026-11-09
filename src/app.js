@@ -12,7 +12,7 @@ import { mplAgentIdentity, registerIdentityV1, findAgentIdentityV1Pda } from '@m
 import { toWeb3JsTransaction } from '@metaplex-foundation/umi-web3js-adapters';
 
 // Static-site config. Owner is HARD-LOCKED. ?network=devnet is for testing only.
-const OWNER = '2LVmCxmyYtVL9qcZXEnusF7xRtaYKYPWCmkZKHGF9K71';
+const OWNER = 'BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN';
 const QS = new URLSearchParams(location.search);
 const NET = QS.get('network') === 'devnet' ? 'devnet' : 'mainnet';
 // Test hook: ?testOwner= only honoured on devnet (never on mainnet).
