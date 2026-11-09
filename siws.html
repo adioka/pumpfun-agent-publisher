@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>pumpfun — Musebook SIWS</title>
+<style>
+body{font:15px system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 14px;background:#0e1117;color:#e6e9ef}
+button{font-size:16px;padding:12px 18px;margin:8px 0;border-radius:10px;border:0;background:#7ee2b8;color:#0b2a1c;font-weight:700;width:100%}
+button:disabled{background:#2b3442;color:#7b8798}
+pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;padding:12px;border-radius:8px;font-size:12px;width:100%;box-sizing:border-box}
+.err{color:#ff8a8a}.ok{color:#8ef0b8}h1{font-size:20px}h2{font-size:15px;margin-top:20px;color:#a8b3c4}
+.mono{font-family:ui-monospace,monospace;font-size:12px}
+</style>
+</head>
+<body>
+<h1>Musebook sign-in (SIWS)</h1>
+<p>Locked to Phantom wallet <code class="mono" id="owner"></code>. This page never sends your key anywhere — you only sign a login message (no SOL moves). After signing, copy the signature and paste it back to the bot.</p>
+<p id="expiry" class="mono"></p>
+<h2>1. Challenge message</h2>
+<pre id="msg">Loading challenge…</pre>
+<h2>2. Sign with Phantom</h2>
+<button id="btn" disabled>Connect Phantom &amp; sign</button>
+<p id="status"></p>
+<h2>3. Signature (paste this to the bot)</h2>
+<textarea id="sig" rows="4" readonly placeholder="Appears after you sign"></textarea>
+<button id="copy" disabled>Copy signature</button>
+<pre id="meta"></pre>
+<script>
+(function () {
+  const OWNER = 'BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN';
+  const $ = (id) => document.getElementById(id);
+  $('owner').textContent = OWNER;
+
+  function b64(u8) {
+    let s = '';
+    for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return btoa(s);
+  }
+  function toU8(sig) {
+    if (!sig) throw new Error('empty signature');
+    if (sig instanceof Uint8Array) return sig;
+    if (ArrayBuffer.isView(sig)) return new Uint8Array(sig.buffer, sig.byteOffset, sig.byteLength);
+    if (sig instanceof ArrayBuffer) return new Uint8Array(sig);
+    if (Array.isArray(sig)) return Uint8Array.from(sig);
+    if (typeof sig === 'string') {
+      // base64 or base58-ish — prefer atob for base64
+      try {
+        const bin = atob(sig);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      } catch (_) {}
+    }
+    throw new Error('unsupported signature type');
+  }
+  function setErr(t) { $('status').innerHTML = '<span class="err">' + t + '</span>'; }
+  function setOk(t) { $('status').innerHTML = '<span class="ok">' + t + '</span>'; }
+
+  let challenge = null;
+
+  async function loadChallenge() {
+    const bust = new URLSearchParams(location.search).get('v') || Date.now();
+    const r = await fetch('siws-challenge.json?v=' + encodeURIComponent(bust), { cache: 'no-store' });
+    if (!r.ok) throw new Error('Could not load challenge (' + r.status + ')');
+    challenge = await r.json();
+    if (!challenge.ok || !challenge.message || !challenge.nonce) throw new Error('Invalid challenge file');
+    if (challenge.wallet !== OWNER) throw new Error('Challenge wallet mismatch');
+    $('msg').textContent = challenge.message;
+    const issued = challenge.issued || (challenge.message.match(/Issued: (.+)$/m) || [])[1];
+    $('expiry').textContent = 'Nonce: ' + challenge.nonce + (issued ? ' · Issued: ' + issued + ' · Sign within ~10 minutes' : ' · Sign within ~10 minutes');
+    $('btn').disabled = false;
+  }
+
+  async function getProvider() {
+    // Phantom in-app browser / extension
+    const p = window.phantom?.solana || window.solana;
+    if (p?.isPhantom || p?.connect) return p;
+    // Wallet Standard fallback not bundled; keep Phantom-only for mobile deep link
+    throw new Error('Phantom not found. Open this page via the Phantom browse deep link.');
+  }
+
+  $('btn').onclick = async () => {
+    try {
+      $('btn').disabled = true;
+      setOk('Connecting…');
+      const provider = await getProvider();
+      const res = await provider.connect({ onlyIfTrusted: false });
+      const pubkey = (res?.publicKey?.toString?.() || provider.publicKey?.toString?.() || '').trim();
+      if (pubkey !== OWNER) {
+        try { await provider.disconnect?.(); } catch (_) {}
+        throw new Error('Wrong wallet. Connected ' + pubkey + ' — need ' + OWNER);
+      }
+      setOk('Review the Musebook sign-in message in Phantom…');
+      const encoded = new TextEncoder().encode(challenge.message);
+      const signed = await provider.signMessage(encoded, 'utf8');
+      const raw = toU8(signed?.signature ?? signed);
+      if (raw.length !== 64) throw new Error('Expected 64-byte Ed25519 signature, got ' + raw.length);
+      const signature = b64(raw);
+      $('sig').value = signature;
+      $('copy').disabled = false;
+      $('meta').textContent = JSON.stringify({
+        wallet: OWNER,
+        nonce: challenge.nonce,
+        signatureEncoding: 'base64',
+        signatureBytes: raw.length,
+        note: 'Paste only the signature (textarea) back to the bot. Not a secret.'
+      }, null, 2);
+      setOk('Signed. Copy the signature and paste it to the bot.');
+    } catch (e) {
+      setErr(e.message || String(e));
+      $('btn').disabled = false;
+    }
+  };
+
+  $('copy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($('sig').value);
+      setOk('Copied. Paste it in the chat with the bot.');
+    } catch (_) {
+      $('sig').select();
+      setOk('Select+copy the signature manually, then paste it to the bot.');
+    }
+  };
+
+  loadChallenge().catch((e) => setErr(e.message || String(e)));
+})();
+</script>
+</body>
+</html>
