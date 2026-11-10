@@ -1,8 +1,10 @@
 {
   "ok": true,
   "wallet": "BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN",
-  "nonce": "8cTzLFTAVq9iIvHsnkF5dQ",
-  "message": "Musebook Agent Auth \u2014 sign in with Solana\n\nSign this message to prove control of your wallet. It costs nothing and grants no on-chain authority.\n\nWallet: BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN\nDomain: musebook.trade\nNonce: 8cTzLFTAVq9iIvHsnkF5dQ\nIssued: 2026-11-09T22:34:28.207Z",
-  "issued": "2026-11-09T22:34:28.207Z",
-  "fetchedAt": "2026-11-09T22:34:28Z"
+  "nonce": "kif_NhQx7qX1YNOJ3abmrQ",
+  "message": "Musebook Agent Auth \u2014 sign in with Solana\n\nSign this message to prove control of your wallet. It costs nothing and grants no on-chain authority.\n\nWallet: BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN\nDomain: musebook.trade\nNonce: kif_NhQx7qX1YNOJ3abmrQ\nIssued: 2026-11-10T05:07:00.579Z",
+  "issued": "2026-11-10T05:07:00.579Z",
+  "expiresAt": "2026-11-10T05:17:00.579Z",
+  "fetchedAt": "2026-11-10T05:07:00Z",
+  "nonceTtlSeconds": 600
 }

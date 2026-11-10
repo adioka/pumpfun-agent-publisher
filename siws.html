@@ -70,7 +70,8 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
     if (challenge.wallet !== OWNER) throw new Error('Challenge wallet mismatch');
     $('msg').textContent = challenge.message;
     const issued = challenge.issued || (challenge.message.match(/Issued: (.+)$/m) || [])[1];
-    $('expiry').textContent = 'Nonce: ' + challenge.nonce + (issued ? ' · Issued: ' + issued + ' · Sign within ~10 minutes' : ' · Sign within ~10 minutes');
+    const exp = challenge.expiresAt || (issued ? new Date(Date.parse(issued) + 10*60*1000).toISOString() : '');
+    $('expiry').textContent = 'Nonce: ' + challenge.nonce + (issued ? ' · Issued: ' + issued : '') + (exp ? ' · Expires: ' + exp + ' (10-minute Musebook nonce; sign before then)' : ' · Sign within 10 minutes of Issued');
     $('btn').disabled = false;
   }
 
