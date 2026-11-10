@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>pumpfun — Musebook SIWS</title>
+<!-- siws-url-v1 -->
 <style>
 body{font:15px system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 14px;background:#0e1117;color:#e6e9ef}
 button{font-size:16px;padding:12px 18px;margin:8px 0;border-radius:10px;border:0;background:#7ee2b8;color:#0b2a1c;font-weight:700;width:100%}
@@ -15,9 +16,9 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
 .mono{font-family:ui-monospace,monospace;font-size:12px}
 </style>
 </head>
-<body>
+<body data-siws-mode="url-v1">
 <h1>Musebook sign-in (SIWS)</h1>
-<p>Locked to Phantom wallet <code class="mono" id="owner"></code>. This page never sends your key anywhere — you only sign a login message (no SOL moves). After signing, copy the signature and paste it back to the bot.</p>
+<p>Locked to Phantom wallet <code class="mono" id="owner"></code>. This page never sends your key anywhere — you only sign a login message (no SOL moves). After signing, tap Copy and paste the signature back to the bot.</p>
 <p id="expiry" class="mono"></p>
 <h2>1. Challenge message</h2>
 <pre id="msg">Loading challenge…</pre>
@@ -46,7 +47,6 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
     if (sig instanceof ArrayBuffer) return new Uint8Array(sig);
     if (Array.isArray(sig)) return Uint8Array.from(sig);
     if (typeof sig === 'string') {
-      // base64 or base58-ish — prefer atob for base64
       try {
         const bin = atob(sig);
         const out = new Uint8Array(bin.length);
@@ -59,27 +59,76 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
   function setErr(t) { $('status').innerHTML = '<span class="err">' + t + '</span>'; }
   function setOk(t) { $('status').innerHTML = '<span class="ok">' + t + '</span>'; }
 
+  function b64urlDecode(s) {
+    s = String(s || '').replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return atob(s);
+  }
+  function param(name) {
+    const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const query = new URLSearchParams(location.search);
+    return hash.get(name) || query.get(name);
+  }
+
+  function parseChallenge() {
+    const rawM = param('m');
+    const rawC = param('c');
+    let message = null;
+    if (rawM) {
+      try { message = b64urlDecode(rawM); } catch (_) { throw new Error('Challenge in the link is not valid base64url.'); }
+      try { message = decodeURIComponent(escape(message)); } catch (_) {}
+    } else if (rawC) {
+      const obj = JSON.parse(b64urlDecode(rawC));
+      message = obj.message || obj.m;
+    }
+    if (!message || typeof message !== 'string') {
+      throw new Error('This link is missing a Musebook sign-in challenge. Ask the bot for a fresh Phantom link.');
+    }
+    if (message.includes('\ufffd')) throw new Error('Challenge message encoding looks corrupted. Ask for a fresh link.');
+    return message;
+  }
+
+  function validateMusebookSiws(message) {
+    // Exact Musebook Agent Auth SIWS shape for this locked wallet.
+    const walletRe = /(?:^|\n)Wallet: ([1-9A-HJ-NP-Za-km-z]{32,44})(?:\n|$)/;
+    const domainRe = /(?:^|\n)Domain: ([^\n]+)(?:\n|$)/;
+    const nonceRe = /(?:^|\n)Nonce: ([A-Za-z0-9_-]{8,})(?:\n|$)/;
+    const issuedRe = /(?:^|\n)Issued: ([^\n]+)(?:\n|$)/;
+    if (!message.startsWith('Musebook Agent Auth') || !message.includes('sign in with Solana')) {
+      throw new Error('This is not a Musebook Agent Auth sign-in message.');
+    }
+    if (!/Sign this message to prove control of your wallet/.test(message)) {
+      throw new Error('This is not a Musebook SIWS challenge message.');
+    }
+    const domain = (message.match(domainRe) || [])[1];
+    const wallet = (message.match(walletRe) || [])[1];
+    const nonce = (message.match(nonceRe) || [])[1];
+    const issued = (message.match(issuedRe) || [])[1];
+    if (domain !== 'musebook.trade') throw new Error('Unexpected domain "' + (domain || '') + '"; expected musebook.trade.');
+    if (wallet !== OWNER) throw new Error('This challenge is for a different wallet. Need ' + OWNER + '.');
+    if (!nonce) throw new Error('Challenge is missing a nonce.');
+    if (!issued || Number.isNaN(Date.parse(issued))) throw new Error('Challenge is missing a valid Issued timestamp.');
+    return { wallet: OWNER, nonce, issued, message, expiresAt: new Date(Date.parse(issued) + 10 * 60 * 1000).toISOString() };
+  }
+
   let challenge = null;
 
-  async function loadChallenge() {
-    const bust = new URLSearchParams(location.search).get('v') || Date.now();
-    const r = await fetch('siws-challenge.json?v=' + encodeURIComponent(bust), { cache: 'no-store' });
-    if (!r.ok) throw new Error('Could not load challenge (' + r.status + ')');
-    challenge = await r.json();
-    if (!challenge.ok || !challenge.message || !challenge.nonce) throw new Error('Invalid challenge file');
-    if (challenge.wallet !== OWNER) throw new Error('Challenge wallet mismatch');
+  function loadChallenge() {
+    challenge = validateMusebookSiws(parseChallenge());
     $('msg').textContent = challenge.message;
-    const issued = challenge.issued || (challenge.message.match(/Issued: (.+)$/m) || [])[1];
-    const exp = challenge.expiresAt || (issued ? new Date(Date.parse(issued) + 10*60*1000).toISOString() : '');
-    $('expiry').textContent = 'Nonce: ' + challenge.nonce + (issued ? ' · Issued: ' + issued : '') + (exp ? ' · Expires: ' + exp + ' (10-minute Musebook nonce; sign before then)' : ' · Sign within 10 minutes of Issued');
+    $('expiry').textContent = 'Nonce: ' + challenge.nonce + ' · Issued: ' + challenge.issued + ' · Expires: ' + challenge.expiresAt + ' (10-minute Musebook nonce; sign before then)';
+    if (Date.now() > Date.parse(challenge.expiresAt)) {
+      $('btn').disabled = true;
+      setErr('This challenge has expired. Ask the bot for a fresh Phantom link.');
+      return;
+    }
     $('btn').disabled = false;
+    setOk('Review the message below, then sign with Phantom.');
   }
 
   async function getProvider() {
-    // Phantom in-app browser / extension
     const p = window.phantom?.solana || window.solana;
     if (p?.isPhantom || p?.connect) return p;
-    // Wallet Standard fallback not bundled; keep Phantom-only for mobile deep link
     throw new Error('Phantom not found. Open this page via the Phantom browse deep link.');
   }
 
@@ -109,7 +158,11 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
         signatureBytes: raw.length,
         note: 'Paste only the signature (textarea) back to the bot. Not a secret.'
       }, null, 2);
-      setOk('Signed. Copy the signature and paste it to the bot.');
+      setOk('Signed. Tap Copy signature, then paste it to the bot.');
+      try {
+        await navigator.clipboard.writeText(signature);
+        setOk('Signed and copied. Paste the signature to the bot.');
+      } catch (_) {}
     } catch (e) {
       setErr(e.message || String(e));
       $('btn').disabled = false;
@@ -126,7 +179,7 @@ pre,textarea{white-space:pre-wrap;word-break:break-all;background:#151b25;paddin
     }
   };
 
-  loadChallenge().catch((e) => setErr(e.message || String(e)));
+  try { loadChallenge(); } catch (e) { setErr(e.message || String(e)); $('msg').textContent = 'No valid challenge in this link.'; }
 })();
 </script>
 </body>

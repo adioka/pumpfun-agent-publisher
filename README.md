@@ -8,4 +8,4 @@ RPC: solana-rpc.publicnode.com (fallback api.mainnet-beta.solana.com). Irys: upl
 `app.js` is an esbuild bundle of `src/app.js` from the builder workspace.
 
 ## Musebook SIWS (`siws.html`)
-Static Sign-In With Solana helper for Phantom mobile. Loads `siws-challenge.json` from this same origin (Musebook API CORS is musebook.trade-only, so the challenge is baked by the bot). Locked to owner `BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN`. Signs one login message; shows a base64 signature to paste back. No keys, no server.
+Static Sign-In With Solana helper for Phantom mobile. The challenge is carried in the page URL (`?m=` or `#m=` base64url of the exact Musebook SIWS message) so a new nonce does not require a GitHub Pages redeploy. Locked to owner `BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN`. The page validates a musebook.trade SIWS message for that wallet, shows the full message, then signs with Phantom and offers a Copy button. No keys, no server, no Musebook API calls (CORS is origin-locked).
