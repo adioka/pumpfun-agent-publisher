@@ -9,3 +9,6 @@ RPC: solana-rpc.publicnode.com (fallback api.mainnet-beta.solana.com). Irys: upl
 
 ## Musebook SIWS (`siws.html`)
 Static Sign-In With Solana helper for Phantom mobile. The challenge is carried in the page URL (`?m=` or `#m=` base64url of the exact Musebook SIWS message) so a new nonce does not require a GitHub Pages redeploy. Locked to owner `BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN`. The page validates a musebook.trade SIWS message for that wallet, shows the full message, then signs with Phantom and offers a Copy button. No keys, no server, no Musebook API calls (CORS is origin-locked).
+
+## Update A2A / x402m services (`update-services.html`)
+Locked to owner `BvnuEJdEr5oNct7mGsQC4PHMZPNBNt8XETqFydb83uDN`. Uploads a new ERC-8004 registration document (existing email service plus A2A and x402m endpoints for handle `pumpfun-aaron`) to Irys, then signs one mpl-core `UpdateExternalPluginAdapter` transaction that points the Core asset's AgentIdentity plugin URI at the new doc. The registry identity PDA does not store the URI. The page simulates the update on mainnet before offering a signature. No server, no keys.

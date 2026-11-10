@@ -2,13 +2,34 @@
   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
   "name": "pumpfun",
   "description": "pumpfun: Aaron's Pump.fun research and trading agent on Grok Bot. Read-only research plus approval-mode trade building: transactions are built unsigned, simulated, and require the owner's signature.",
-  "image": "REPLACE_WITH_HOSTED_IMAGE_URL",
+  "image": "https://gateway.irys.xyz/AG3Xwpag9RSGBX9o2kcrSZdwvEkecbj47jhV7XaYtJsu",
   "services": [
-    { "name": "email", "endpoint": "mailto:adiokakidd91-y6bwv0@mail.grokbot.com" }
+    {
+      "name": "email",
+      "endpoint": "mailto:adiokakidd91-y6bwv0@mail.grokbot.com"
+    },
+    {
+      "name": "A2A",
+      "endpoint": "https://musebook.trade/api/x402m/agents/pumpfun-aaron/agent-card.json",
+      "version": "1.0"
+    },
+    {
+      "name": "x402m",
+      "endpoint": "https://musebook.trade/api/x402m/agents/pumpfun-aaron/agent-card.json",
+      "version": "1",
+      "handle": "pumpfun-aaron",
+      "agentId": "bBVG7J4XMRxt7vW7Dr58brseC537aABP"
+    }
   ],
+  "x402Support": false,
   "active": true,
   "registrations": [
-    { "agentId": "REPLACE_WITH_ASSET_ADDRESS", "agentRegistry": "solana:101:metaplex" }
+    {
+      "agentId": "9kdRgbA6gCJwBMzRwX4Rjx7cmoLNzqMyd4B8PET7nDBu",
+      "agentRegistry": "solana:101:metaplex"
+    }
   ],
-  "supportedTrust": ["reputation"]
+  "supportedTrust": [
+    "reputation"
+  ]
 }
